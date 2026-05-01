@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="9.005" timestamp="2026-05-01T04:47:35.601934+00:00" hostname="agent-env-7220a75d-4ee9-4507-a0ae-f5a26cfccb2e"><testcase classname="backend.tests.test_iteration2" name="test_meera_agentic_three_actions" time="2.239"><failure message="AssertionError: Expected &gt;=3 actions, got 0: []&#10;assert 0 &gt;= 3&#10; +  where 0 = len([])">backend/tests/test_iteration2.py:43: in test_meera_agentic_three_actions
+    assert len(actions) &gt;= 3, f"Expected &gt;=3 actions, got {len(actions)}: {actions}"
+E   AssertionError: Expected &gt;=3 actions, got 0: []
+E   assert 0 &gt;= 3
+E    +  where 0 = len([])</failure></testcase><testcase classname="backend.tests.test_iteration2" name="test_meera_emotional_no_actions" time="2.288" /><testcase classname="backend.tests.test_iteration2" name="test_meera_offtopic_redirect" time="2.209" /><testcase classname="backend.tests.test_iteration2" name="test_meera_complete_priority" time="1.913"><failure message="AssertionError: complete_priority not attempted: []&#10;assert 'complete_priority' in []">backend/tests/test_iteration2.py:109: in test_meera_complete_priority
+    assert "complete_priority" in types, f"complete_priority not attempted: {actions}"
+E   AssertionError: complete_priority not attempted: []
+E   assert 'complete_priority' in []</failure></testcase><testcase classname="backend.tests.test_iteration2" name="test_meera_voice_empty" time="0.170" /><testcase classname="backend.tests.test_iteration2" name="test_nutrition_post_get" time="0.092" /></testsuite></testsuites>

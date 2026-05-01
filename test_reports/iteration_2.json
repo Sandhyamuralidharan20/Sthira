@@ -1,0 +1,43 @@
+{
+  "summary": "Iteration 2 testing complete. Backend: 6/6 logical features verified — agentic 3-actions (manually via curl with fresh location), emotional/no-actions, off-topic redirect, complete_priority, voice-empty 400, nutrition POST/GET. Pytest shows 4/6 passing because Meera dedups across the *global* chat history (session_id is not used to filter prior messages), so re-running similar messages produces 0 actions. Frontend: all checks pass — Meera FAB with lily glyph (NO avatar), 'Meera · you, five years from now' header, mic/input/send testIDs, action chips render with 'Added project: Adyar 4BHK Office Space (warm lead)', no endearments, Planner shows 5-category legend, coloured dots per date, and Mon–Fri auto-gym card ('Gym · Push Chest+Tri', 'Auto · weekday'). All previous flows still working.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/meera/chat", "issue": "session_id is accepted but NOT used to filter chat history in _meera_reply (line 565: db.chat_messages.find({}) loads all messages regardless of session). Result: Meera sees prior test sessions and refuses to re-act on similar inputs, replying 'already logged' / 'you just said this'. Functionality is correct on a fresh DB but test reproducibility and multi-user isolation are broken."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "global", "issues": ["Console warns: 'shadow*' style props deprecated → use boxShadow (cosmetic, RN web)", "props.pointerEvents deprecated (cosmetic)"]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration2.py",
+    "/app/backend/tests/test_sthira_backend.py",
+    "/app/test_reports/pytest/iter2_results.xml"
+  ],
+  "action_items": [
+    "Fix chat history isolation in _meera_reply (server.py L565): change `db.chat_messages.find({}, ...)` to `db.chat_messages.find({'session_id': session_id}, ...)` AND persist session_id on ChatMessage inserts in /api/meera/chat and /api/meera/voice. Without this, the agentic system can't be tested deterministically and any second user shares Meera's memory.",
+    "Optional: add /api/meera/clear or /api/meera/reset endpoint to wipe history per session for test cleanup.",
+    "Cosmetic: migrate shadow* style props to boxShadow on RN web."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 707 lines but logically organised; OK to keep monolithic for this app size.",
+    "_meera_reply correctly excludes _id and parses JSON robustly.",
+    "MeeraChat.tsx properly uses EXPO_PUBLIC_BACKEND_URL via process.env, all interactive elements have testIDs (meera-fab/input/send/mic/close).",
+    "planner.tsx auto-injection of fuchsia gym dot for weekdays is implemented exactly as spec (dotsForDate, line 64-71)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration2.py (new)",
+    "/app/test_reports/pytest/iter2_results.xml (new)"
+  ],
+  "success_rate": {"backend": "100% (functional, verified via curl with fresh history); 67% (pytest 4/6 due to history pollution)", "frontend": "100%"},
+  "seed_data_creation": "None. Tests randomize project location via uuid suffix and clean up nutrition with TEST_ prefix.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Verified manually: POST /api/meera/chat with brand-new lead 'Pondicherry villa Mr Sharma + 30 min cycling + moong dal khichdi' → returns 3 ok:true actions and clean plain-text reply. Verified Adyar lead in UI produced 'Added project: Adyar 4BHK Office Space (warm lead)' chip. The pytest agentic-3-actions and complete_priority tests will fail until chat history is filtered by session_id (server.py L565) — this is the single backend issue. After main agent applies the fix, re-run `pytest /app/backend/tests/test_iteration2.py -v` and expect 6/6.",
+  "rca_of_issue": "RCA — Meera over-deduplicates across sessions:\nFile: /app/backend/server.py, function _meera_reply (≈ L554-586).\nLine 565: `history = await db.chat_messages.find({}, {\"_id\": 0}).sort(\"created_at\", 1).to_list(40)` — pulls ALL messages from every session into the LLM prompt as 'recent exchange'. Combined with Claude's strong tone rule ('Sandhya, you just said this'), any repeat-looking input emits zero actions.\nReproduction: POST /api/meera/chat twice with the same message body and any session_id → second call returns actions:[].\nFix: (a) add `session_id` field to ChatMessage model, (b) set it on inserts in meera_chat and meera_voice, (c) filter history by `{'session_id': session_id}` in _meera_reply. Frontend already passes a session_id in the voice path; chat path defaults to 'meera-default' which is fine."
+}
