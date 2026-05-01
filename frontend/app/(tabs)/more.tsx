@@ -7,7 +7,8 @@ import { colors, fonts, radii, space } from "../../src/theme";
 
 const TILES = [
   { route: "/firm", title: "Firm", subtitle: "Stithi Architects pipeline", icon: "business-outline" as const, color: colors.kumkum },
-  { route: "/progress", title: "Progress", subtitle: "Graphs · measurements", icon: "trending-up-outline" as const, color: colors.marigold },
+  { route: "/progress", title: "Progress", subtitle: "Weekly effort score · mood · body", icon: "trending-up-outline" as const, color: colors.marigold },
+  { route: "/reels", title: "Reels", subtitle: "Instagram · content streak", icon: "film-outline" as const, color: "#8E44AD" },
   { route: "/mind", title: "Mind", subtitle: "Brain dump · journal", icon: "leaf-outline" as const, color: colors.terracotta },
 ];
 

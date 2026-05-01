@@ -55,6 +55,18 @@ export const api = {
   addMind: (text: string) => req(`/mind`, { method: "POST", body: JSON.stringify({ text }) }),
   deleteMind: (id: string) => req(`/mind/${id}`, { method: "DELETE" }),
 
+  // reels
+  listReels: () => req(`/reels`),
+  createReel: (body: any) => req(`/reels`, { method: "POST", body: JSON.stringify(body) }),
+  updateReel: (id: string, body: any) => req(`/reels/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteReel: (id: string) => req(`/reels/${id}`, { method: "DELETE" }),
+  reelsAnalytics: () => req(`/reels/analytics`),
+  reelsMeeraSuggestion: () => req(`/reels/meera_suggestion`),
+
+  // progress
+  progressWeekly: () => req(`/progress/weekly`),
+  progressVerdict: () => req(`/progress/meera_verdict`),
+
   // meera
   meeraChat: (message: string) =>
     req(`/meera/chat`, { method: "POST", body: JSON.stringify({ message, session_id: "meera-default" }) }),

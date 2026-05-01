@@ -36,6 +36,7 @@ export default function RootLayout() {
           <Stack.Screen name="firm" options={{ presentation: "modal", headerShown: false }} />
           <Stack.Screen name="progress" options={{ presentation: "modal", headerShown: false }} />
           <Stack.Screen name="mind" options={{ presentation: "modal", headerShown: false }} />
+          <Stack.Screen name="reels" options={{ presentation: "modal", headerShown: false }} />
         </Stack>
         <MeeraChat />
       </SafeAreaProvider>
