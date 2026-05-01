@@ -1,0 +1,101 @@
+{
+  "theme": "Light",
+  "archetype": "Organic & Earthy - Vibrant Sunset Variant",
+  "design_philosophy": "Feminine, warm, Indian-inspired but modern. Celebratory yet calming. Architecturally precise but organically styled.",
+  "colors": {
+    "background": {
+      "primary": "#FDFBF7",
+      "secondary": "#F4EBE6",
+      "tertiary": "#EFE8DE"
+    },
+    "text": {
+      "primary": "#2C2421",
+      "secondary": "#63524B",
+      "inverse": "#FDFBF7"
+    },
+    "accent": {
+      "fuchsia": "#D81159",
+      "marigold": "#FF9F1C",
+      "saffron": "#FFB703",
+      "kumkum": "#B9123D",
+      "terracotta": "#E2725B"
+    },
+    "status": {
+      "success": "#FFB703",
+      "warning": "#FF9F1C",
+      "info": "#2C2421"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Fraunces",
+      "body": "Manrope"
+    },
+    "scale": {
+      "h1": "text-4xl tracking-tighter leading-tight font-light",
+      "h2": "text-2xl tracking-tight leading-snug font-normal",
+      "h3": "text-xl tracking-tight",
+      "body": "text-base leading-relaxed",
+      "label": "text-xs tracking-[0.2em] uppercase font-bold"
+    }
+  },
+  "layout_and_spacing": {
+    "container_padding": "p-6",
+    "border_radius": "rounded-3xl",
+    "bento_grid": "Use React Native View with flexDirection: 'row', flexWrap: 'wrap', gap: 16 for bento layouts in Today tab."
+  },
+  "navigation": {
+    "strategy": "Hybrid 5+2 Tab Navigation",
+    "details": "To accommodate 7 tabs elegantly on mobile: Use a 5-item Bottom Tab Bar (Today, Planner, Fitness, Cycle, Menu). The 'Menu' tab opens a custom Bottom Sheet containing the remaining 3 tabs: Firm, Progress, Mind. This maintains 2026 UX best practices while including all 7 views without crowding the thumb zone."
+  },
+  "components": {
+    "floating_assistant": {
+      "name": "Meera",
+      "description": "Floating chat bubble accessible globally. Needs a subtle drop shadow and warm fuchsia/orange gradient border. Should remain persistent across all main screens.",
+      "avatar_url": "https://images.unsplash.com/photo-1645540161186-cf8ae8efbfd7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB3b21hbiUyMGFyY2hpdGVjdCUyMHBvcnRyYWl0JTIwd2FybXxlbnwwfHx8fDE3Nzc2MDcwNzh8MA&ixlib=rb-4.1.0&q=85"
+    },
+    "celebration_animation": {
+      "library": "lottie-react-native",
+      "description": "Marigold celebration burst when tasks/workouts are completed. If Lottie isn't immediately available, use react-native-reanimated for a custom scaling/fading orange/saffron particle effect."
+    },
+    "cards": {
+      "style": "Flat solid surfaces. No glassmorphism (feels too clinical). Use solid #F4EBE6 or #FFFFFF with a 1px border of #2C2421 at 10% opacity. Subtle drop shadow (shadow-sm)."
+    }
+  },
+  "screens": {
+    "Today": "Bento grid layout. Includes: daily motivation quote (Fraunces font), cycle phase indicator, 3 priorities checklist, nutrition tip card, watch goals (steps/water/sleep).",
+    "Planner": "Monthly/Weekly calendar view. Clean, architectural grid.",
+    "Fitness": "5-day PPL split (Mon Push, Tue Pull, Wed Legs, Thu Push, Fri Legs). Use horizontal scrolling cards for days with exact weights.",
+    "Firm": "Project pipeline (Warm Lead / Active / Cold Lead) for Stithi Architects. Kanban style horizontal swiping.",
+    "Cycle": "32-day circular tracker. Highly visual, using SVG circular progress or segmented arcs representing (menstrual, follicular, ovulation, luteal).",
+    "Progress": "Graphs and body measurements. Use warm earthy tones for chart lines.",
+    "Mind": "Minimalist text input for brain dump. High negative space, distraction-free."
+  },
+  "image_urls": {
+    "textures_and_backgrounds": [
+      {
+        "url": "https://images.unsplash.com/photo-1582692170271-e3c259dc3de6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwzfHxtYXJpZ29sZCUyMGZsb3dlciUyMHRleHR1cmV8ZW58MHx8fHwxNzc3NjA3MDU4fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Marigold macro texture for headers or Celebration overlay"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1687588192703-4b6f7e5648b2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwwyfHxjaGVubmFpJTIwYXJjaGl0ZWN0dXJlJTIwd2FybXxlbnwwfHx8fDE3Nzc2MDcwNTd8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Warm Chennai architecture, good for Firm tab background or header"
+      }
+    ],
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1645540161186-cf8ae8efbfd7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB3b21hbiUyMGFyY2hpdGVjdCUyMHBvcnRyYWl0JTIwd2FybXxlbnwwfHx8fDE3Nzc2MDcwNzh8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Meera (Assistant) or Sandhya Avatar portrait"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: This is a React Native Expo app. Do NOT use HTML elements (div, span). Use View, Text, TouchableOpacity, ScrollView.",
+    "Use NativeWind or StyleSheet for styling. Maps Tailwind classes provided in these guidelines to NativeWind.",
+    "Implement the Meera assistant as a floating absolute-positioned element across main screens.",
+    "Ensure all interactive elements have a `testID` attribute (e.g., testID='today-tab').",
+    "Avoid generic purple/blue gradients completely. Stick exclusively to the warm fuchsia, marigold, and earthy palette provided.",
+    "For typography, use Fraunces for headings (h1, h2) and Manrope for body text.",
+    "For the 7 tabs: implement a bottom navigation bar with 5 icons, and use a drawer/bottom sheet for the remaining 2, OR implement a horizontally scrollable tab bar if strict 7-tab flat hierarchy is mandatory."
+  ]
+}
