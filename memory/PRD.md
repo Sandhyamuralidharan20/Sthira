@@ -14,7 +14,7 @@ Bottom tabs: Today · Planner · Fitness · Cycle · More.
 
 ## Features
 - **Today**: Daily quote, cycle phase, 3 priorities, nutrition tip, watch goals (steps/water/sleep).
-- **Planner**: Monthly calendar with multi-coloured category dots (fuchsia=Gym auto Mon–Fri, orange=Firm, purple=Content, green=AECOM, gold=Personal). Tap date for agenda + auto-gym card on weekdays.
+- **Planner**: Monthly calendar with multi-coloured category dots (fuchsia=Gym auto Mon–Fri, orange=Firm, purple=Content, green=AECOM, gold=Personal). **Cycle phases also tint each cell** — soft pink on period days (day 1–periodLength), soft gold on ovulation window (mid-cycle ±1), soft purple on luteal/PMS days. **🌸 emoji** marks the predicted next period start date. Two legend rows below the calendar (categories + cycle phases). Whole screen scrolls so the day-agenda below the calendar is fully reachable. Tap date for agenda + auto-gym card on weekdays + cycle-day caption.
 - **Fitness**: 5-day PPL split with exact weights; tap exercise to log a set + marigold burst.
 - **Firm**: Stithi Architects pipeline with status cycling. Seeded with 4 projects.
 - **Cycle**: 32-day rhythm tracker, 4 phases, daily flow/symptoms/mood log.
