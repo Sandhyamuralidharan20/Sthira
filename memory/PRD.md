@@ -14,13 +14,17 @@ Bottom tabs: Today · Planner · Fitness · Cycle · More
 
 ## Features
 - **Today**: Daily quote (rotates), cycle phase indicator, 3 priorities checklist, nutrition tip, watch goals (steps/water/sleep with +/-)
-- **Planner**: Monthly calendar grid, day-events with categories (personal/work/fitness/cycle)
+- **Planner**: Monthly calendar. Each date shows up to 5 coloured dots: **fuchsia=Gym (auto Mon–Fri), orange=Firm/Work, purple=Content, green=AECOM, gold=Personal**. Tap a date to see its agenda (auto-gym card appears on weekdays).
 - **Fitness**: 5-day PPL split with exact weights (Mon Push, Tue Pull, Wed Legs G+H, Thu Push, Fri Legs Q+C). Tap to log a set, marigold burst on completion.
 - **Firm**: Stithi Architects pipeline (Active / Warm Lead / Cold Lead / Completed). Tap card to cycle status. Pre-seeded with Avadi Farmhouse, Bangalore Farmhouse, Kerala Cottage, Steel Co Guest House.
-- **Cycle**: 32-day rhythm tracker with 4 phases (menstrual/follicular/ovulation/luteal). User sets last period start. Daily flow/symptoms/mood log.
+- **Cycle**: 32-day rhythm tracker with 4 phases. User sets last period start. Daily flow/symptoms/mood log.
 - **Progress**: Hero week-stat, 6 measurement fields with sparklines, recent entries.
 - **Mind**: Distraction-free brain dump with timestamped entries.
-- **Meera**: Floating chat bubble (always visible). Claude Sonnet 4.5 powered, persona = Sandhya's future successful self, warm Indian sister tone.
+- **Meera (agentic)**: Floating lily-glyph bubble (no photo avatar). Persona = confident, successful future-Sandhya at 31, principal of Stithi, married to her cricketer. Tone: direct, no endearments, calls her "Sandhya". Powered by Claude Sonnet 4.5 (Emergent LLM key) with structured JSON action-emitting schema.
+  - **Voice input** via OpenAI whisper-1 — hold the mic, speak, release to send (web preview).
+  - **Auto-actions from any message/voice note**: add_project (new leads), log_workout (gym/treadmill/cardio/yoga), log_meal (nutrition notes), complete_priority (matches today's priority by keyword). Multiple actions per message supported.
+  - Stressed / overwhelmed → acknowledges briefly, no actions. Off-topic → redirects firmly.
+  - Per-session chat history isolation.
 - **Marigold celebration**: Custom Reanimated burst on priority + workout completion.
 
 ## Backend Endpoints
@@ -33,7 +37,10 @@ Bottom tabs: Today · Planner · Fitness · Cycle · More
 - `/api/cycle` (GET, PUT), `/api/cycle/logs` (GET, POST)
 - `/api/measurements` (GET, POST)
 - `/api/mind` (GET, POST, DELETE)
-- `/api/meera/chat` (POST), `/api/meera/messages` (GET)
+- `/api/nutrition` (GET, POST) — auto-populated by Meera's log_meal
+- `/api/meera/chat` (POST) — returns { reply, actions: [{type, ok, label}] }
+- `/api/meera/voice` (POST multipart) — whisper-1 transcribe → same agent → actions
+- `/api/meera/messages` (GET ?session_id=...)
 
 ## Data
 - MongoDB collections: priorities, watch_goals, planner_events, fitness_logs, firm_projects, cycle_settings, cycle_logs, measurements, mind_entries, chat_messages

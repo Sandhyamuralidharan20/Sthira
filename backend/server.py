@@ -172,6 +172,7 @@ class MindEntryCreate(BaseModel):
 
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str = "meera-default"
     role: str  # user, assistant
     text: str
     created_at: str = Field(default_factory=now_iso)
@@ -561,8 +562,8 @@ async def _meera_reply(message: str, session_id: str) -> dict:
         system_message=MEERA_SYSTEM,
     ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
-    # prior context
-    history = await db.chat_messages.find({}, {"_id": 0}).sort("created_at", 1).to_list(40)
+    # prior context (isolated per session)
+    history = await db.chat_messages.find({"session_id": session_id}, {"_id": 0}).sort("created_at", 1).to_list(40)
     prior = history[-10:]
     context = ""
     if prior:
@@ -588,7 +589,7 @@ async def _meera_reply(message: str, session_id: str) -> dict:
 
 @api_router.post("/meera/chat")
 async def meera_chat(req: ChatRequest):
-    user_msg = ChatMessage(role="user", text=req.message)
+    user_msg = ChatMessage(role="user", text=req.message, session_id=req.session_id)
     await db.chat_messages.insert_one(user_msg.dict())
 
     try:
@@ -597,7 +598,7 @@ async def meera_chat(req: ChatRequest):
         logging.exception("Meera chat error")
         raise HTTPException(500, f"Chat failed: {str(e)}")
 
-    bot_msg = ChatMessage(role="assistant", text=result["reply"])
+    bot_msg = ChatMessage(role="assistant", text=result["reply"], session_id=req.session_id)
     await db.chat_messages.insert_one(bot_msg.dict())
     return {"reply": result["reply"], "actions": result["actions"], "id": bot_msg.id}
 
@@ -624,18 +625,18 @@ async def meera_voice(audio: UploadFile = File(...), session_id: str = "meera-de
         raise HTTPException(400, "Could not understand audio")
 
     # persist user msg with transcript
-    user_msg = ChatMessage(role="user", text=f"🎙 {transcript}")
+    user_msg = ChatMessage(role="user", text=f"🎙 {transcript}", session_id=session_id)
     await db.chat_messages.insert_one(user_msg.dict())
 
     result = await _meera_reply(transcript, session_id)
-    bot_msg = ChatMessage(role="assistant", text=result["reply"])
+    bot_msg = ChatMessage(role="assistant", text=result["reply"], session_id=session_id)
     await db.chat_messages.insert_one(bot_msg.dict())
     return {"transcript": transcript, "reply": result["reply"], "actions": result["actions"], "id": bot_msg.id}
 
 
 @api_router.get("/meera/messages")
-async def list_messages(limit: int = 100):
-    items = await db.chat_messages.find({}, {"_id": 0}).sort("created_at", 1).to_list(limit)
+async def list_messages(limit: int = 100, session_id: str = "meera-default"):
+    items = await db.chat_messages.find({"session_id": session_id}, {"_id": 0}).sort("created_at", 1).to_list(limit)
     return items
 
 # ---------- Daily Inspirations / Nutrition ----------
