@@ -17,14 +17,19 @@ import anthropic
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL', '')
+db_name = os.environ.get('DB_NAME', 'sthira')
 client = AsyncIOMotorClient(
     mongo_url,
     tls=True,
     tlsAllowInvalidCertificates=True,
     serverSelectionTimeoutMS=5000,
-)
-db = client[os.environ['DB_NAME']]
+    connectTimeoutMS=5000,
+) if mongo_url else None
+db = client[db_name] if client else None
+
+
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 # Anthropic client
 anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
