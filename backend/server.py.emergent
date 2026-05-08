@@ -12,7 +12,8 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, date, timedelta
-import anthropic
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.llm.openai import OpenAISpeechToText
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -20,18 +21,7 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
-ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
-
-# Anthropic client
-anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
-
-# OpenAI client for Whisper voice transcription
-try:
-    from openai import OpenAI
-    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
-    openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-except ImportError:
-    openai_client = None
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -343,6 +333,7 @@ async def create_reel(payload: ReelCreate):
         new_followers=payload.new_followers, notes=payload.notes,
     )
     await db.reels.insert_one(r.dict())
+    # mirror to planner as content event
     pe = PlannerEvent(date=r.date, title=f"Reel · {r.topic}", category="content",
                       notes=f"{r.views} views · {r.saves} saves · +{r.new_followers} followers")
     await db.planner_events.insert_one(pe.dict())
@@ -432,7 +423,6 @@ When stressed/sad/overwhelmed, emit NO actions. Reply briefly, then one next mov
 Your reply must confirm what you did specifically, in your voice.
 Always valid JSON. Never break character."""
 
-
 async def _execute_action(act: dict) -> dict:
     t = act.get("type")
     try:
@@ -466,7 +456,6 @@ async def _execute_action(act: dict) -> dict:
         logging.exception("action error")
         return {"type": t, "ok": False, "label": f"Failed: {str(e)[:60]}"}
 
-
 def _parse_meera_json(raw: str) -> dict:
     s = raw.strip()
     if s.startswith("```"):
@@ -480,44 +469,25 @@ def _parse_meera_json(raw: str) -> dict:
             except Exception: pass
     return {"reply": raw, "actions": []}
 
-
-def _call_anthropic(system: str, messages: list) -> str:
-    """Synchronous Anthropic API call."""
-    if not anthropic_client:
-        raise HTTPException(500, "ANTHROPIC_API_KEY not configured")
-    response = anthropic_client.messages.create(
-        model="claude-sonnet-4-5",
-        max_tokens=1024,
-        system=system,
-        messages=messages,
-    )
-    return response.content[0].text
-
-
 async def _meera_reply(message: str, session_id: str) -> dict:
-    if not anthropic_client:
-        raise HTTPException(500, "ANTHROPIC_API_KEY not configured")
-
-    # Load recent history for context
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(500, "EMERGENT_LLM_KEY not configured")
+    chat = LlmChat(api_key=EMERGENT_LLM_KEY, session_id=session_id, system_message=MEERA_SYSTEM).with_model("anthropic", "claude-sonnet-4-5-20250929")
     history = await db.chat_messages.find({"session_id": session_id}, {"_id": 0}).sort("created_at", 1).to_list(40)
     prior = history[-10:]
-
-    # Build messages list for Anthropic
-    messages = []
-    for m in prior:
-        role = "user" if m["role"] == "user" else "assistant"
-        messages.append({"role": role, "content": m["text"]})
-
-    # Add current message
-    messages.append({"role": "user", "content": message})
-
-    raw = _call_anthropic(MEERA_SYSTEM, messages)
+    context = ""
+    if prior:
+        context = "Recent exchange (for context only):\n"
+        for m in prior:
+            who = "Sandhya" if m["role"] == "user" else "Meera"
+            context += f"{who}: {m['text']}\n"
+        context += "\nNew message from Sandhya:\n"
+    raw = await chat.send_message(UserMessage(text=context + message))
     parsed = _parse_meera_json(raw)
     results = []
     for act in parsed.get("actions", []) or []:
         results.append(await _execute_action(act))
     return {"reply": parsed.get("reply") or raw, "actions": results}
-
 
 @api_router.post("/meera/chat")
 async def meera_chat(req: ChatRequest):
@@ -532,23 +502,18 @@ async def meera_chat(req: ChatRequest):
     await db.chat_messages.insert_one(bot_msg.dict())
     return {"reply": result["reply"], "actions": result["actions"], "id": bot_msg.id}
 
-
 @api_router.post("/meera/voice")
 async def meera_voice(audio: UploadFile = File(...), session_id: str = "meera-default"):
-    if not openai_client:
-        raise HTTPException(500, "OPENAI_API_KEY not configured (needed for voice transcription)")
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(500, "EMERGENT_LLM_KEY not configured")
     data = await audio.read()
     if not data: raise HTTPException(400, "Empty audio")
     filename = audio.filename or "voice.webm"
     bio = io.BytesIO(data); bio.name = filename
     try:
-        tx = openai_client.audio.transcriptions.create(
-            model="whisper-1",
-            file=(filename, bio),
-            response_format="json",
-            language="en"
-        )
-        transcript = tx.text if hasattr(tx, "text") else ""
+        stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
+        tx = await stt.transcribe(file=bio, model="whisper-1", response_format="json", language="en")
+        transcript = getattr(tx, "text", None) or (tx.get("text") if isinstance(tx, dict) else "")
     except Exception as e:
         logging.exception("whisper error")
         raise HTTPException(500, f"Transcription failed: {str(e)}")
@@ -561,11 +526,9 @@ async def meera_voice(audio: UploadFile = File(...), session_id: str = "meera-de
     await db.chat_messages.insert_one(bot_msg.dict())
     return {"transcript": transcript, "reply": result["reply"], "actions": result["actions"], "id": bot_msg.id}
 
-
 @api_router.get("/meera/messages")
 async def list_messages(limit: int = 100, session_id: str = "meera-default"):
     return await db.chat_messages.find({"session_id": session_id}, {"_id": 0}).sort("created_at", 1).to_list(limit)
-
 
 # ---- Reels / Meera suggestion ----
 @api_router.get("/reels/meera_suggestion")
@@ -576,21 +539,21 @@ async def reels_meera_suggestion():
         return {"suggestion": "No posts in the last three weeks. Pick one thing you did for Stithi this week - before/after of a plan, a site visit, a material choice - and shoot a 30 second vertical today."}
     top = max(recent, key=_reel_score)
     topic = top.get("topic", "your recent winner")
-    if not anthropic_client:
+    if not EMERGENT_LLM_KEY:
         return {"suggestion": f"Your top post was on '{topic}'. Make another one in the same vein this week.", "top_topic": topic}
     try:
+        chat = LlmChat(api_key=EMERGENT_LLM_KEY, session_id="meera-reels", system_message=MEERA_SYSTEM).with_model("anthropic", "claude-sonnet-4-5-20250929")
         summary = (
             f"Sandhya's top Instagram reel in the last 21 days was about '{topic}' "
             f"({top.get('views', 0)} views, {top.get('saves', 0)} saves, +{top.get('new_followers', 0)} followers). "
             "Give her ONE specific content suggestion for this week based on this winner. "
             "Return JSON per your schema. The reply should be a single sentence with a concrete shoot idea. No actions."
         )
-        raw = _call_anthropic(MEERA_SYSTEM, [{"role": "user", "content": summary}])
+        raw = await chat.send_message(UserMessage(text=summary))
         parsed = _parse_meera_json(raw)
         return {"suggestion": (parsed.get("reply") or raw).strip(), "top_topic": topic}
     except Exception:
         return {"suggestion": f"Your top post was '{topic}'. Do one more in that lane this week.", "top_topic": topic}
-
 
 # =========================================================================
 # Progress — weekly effort score + Meera verdict
@@ -674,20 +637,20 @@ async def meera_verdict():
     gym = b["gym"]["value"]; stithi = b["stithi"]["value"]; reels = b["reels"]["value"]
     mood = b["mood"]["value"]; score = w["effort_score"]
     facts = f"Gym sessions: {gym}/5. Stithi moves: {stithi}. Reels posted: {reels}. Mood avg: {mood}. Effort score: {score}/10."
-    if not anthropic_client:
+    if not EMERGENT_LLM_KEY:
         return {"verdict": facts, "effort_score": score, "max_score": 10}
     try:
+        chat = LlmChat(api_key=EMERGENT_LLM_KEY, session_id="meera-verdict", system_message=MEERA_SYSTEM).with_model("anthropic", "claude-sonnet-4-5-20250929")
         prompt = (
             "Give Sandhya ONE honest sentence (max two) about her week based on: " + facts +
             " Encourage effort, don't flatter. If something was low, name it without shaming. "
             "Return JSON per your schema with no actions."
         )
-        raw = _call_anthropic(MEERA_SYSTEM, [{"role": "user", "content": prompt}])
+        raw = await chat.send_message(UserMessage(text=prompt))
         parsed = _parse_meera_json(raw)
         return {"verdict": (parsed.get("reply") or raw).strip(), "effort_score": score, "max_score": 10}
     except Exception:
         return {"verdict": facts, "effort_score": score, "max_score": 10}
-
 
 # =========================================================================
 # Daily inspiration + seed
