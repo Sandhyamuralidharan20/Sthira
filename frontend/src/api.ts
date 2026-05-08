@@ -1,4 +1,4 @@
-
+const BASE = "https://sthira-backend-icxm.onrender.com";
 
 async function req(path: string, opts: RequestInit = {}) {
   const res = await fetch(`${BASE}/api${path}`, {
